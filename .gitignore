@@ -1,0 +1,11 @@
+# Ignore virtual environments
+.venv/
+
+# Ignore Pycache
+__pycache__/
+
+# Ignore sensitive files
+.env
+
+# Ignore VSCode settings
+.vscode/
