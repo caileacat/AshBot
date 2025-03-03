@@ -1,8 +1,16 @@
 {
     "851181959933591554": {
-        "username": "cailea",
         "info": {
-            "Lemon": "a close friend of [cailea]."
+            "name": "Cailea",
+            "partner": "Lemon",
+            "relationship": "Closest companion"
+        }
+    },
+    "424042103346298880": {
+        "info": {
+            "name": "Lemon",
+            "partner": "Cailea",
+            "relationship": "Beloved partner of Cailea"
         }
     }
 }
