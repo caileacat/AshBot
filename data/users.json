@@ -1,16 +1,61 @@
 {
     "851181959933591554": {
         "info": {
-            "name": "Cailea",
-            "partner": "Lemon",
-            "relationship": "Closest companion"
+            "name": [
+                {
+                    "value": "Cailea",
+                    "timestamp": "2025-03-03T17:31:30.608206"
+                }
+            ],
+            "partner": [
+                {
+                    "value": "Lemon",
+                    "timestamp": "2025-03-03T17:31:30.608206"
+                }
+            ],
+            "relationship": [
+                {
+                    "value": "Best Friend",
+                    "timestamp": "2025-03-03T17:31:30.608206"
+                },
+                {
+                    "value": "Boss",
+                    "timestamp": "2025-03-03T17:31:30.608206"
+                }
+            ]
         }
     },
     "424042103346298880": {
         "info": {
-            "name": "Lemon",
-            "partner": "Cailea",
-            "relationship": "Beloved partner of Cailea"
+            "name": [
+                {
+                    "value": "Lemon",
+                    "timestamp": "2025-03-03T17:31:30.608206"
+                }
+            ],
+            "partner": [
+                {
+                    "value": "Cailea",
+                    "timestamp": "2025-03-03T17:31:30.608206"
+                }
+            ],
+            "relationship": [
+                {
+                    "value": "Cailea's partner",
+                    "timestamp": "2025-03-03T17:31:30.608206"
+                },
+                {
+                    "value": "close friend",
+                    "timestamp": "2025-03-03T17:31:30.608206"
+                },
+                {
+                    "value": "fellow troll and troublemaker",
+                    "timestamp": "2025-03-03T17:31:30.608206"
+                }
+            ]
         }
+    },
+    "ash_personality": {
+        "self_awareness": []
     }
 }
