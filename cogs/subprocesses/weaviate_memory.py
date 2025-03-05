@@ -12,19 +12,18 @@ client = wvc.connect_to_custom(
 async def save_user_memory(user_id, memory_data, debug_channel=None):
     """Saves a user's memory to Weaviate, avoiding duplicates."""
     try:
-        # Convert memory data to JSON format
-        memory_json = json.dumps(memory_data)
+        memory_json = json.dumps(memory_data, ensure_ascii=False)  # ✅ Ensures proper encoding
 
-        # Check if the user already has saved memory
+        # ✅ Check if the user already has saved memory
         existing_memory = await load_user_memory(user_id, debug_channel)
         if existing_memory == memory_data:
             debug_msg = f"⚠️ **No changes detected for user `{user_id}`, skipping save.**"
             print(debug_msg)
             if debug_channel:
                 await debug_channel.send(debug_msg)
-            return  # No need to overwrite identical data
+            return
 
-        # Insert or update data into Weaviate
+        # ✅ Insert or update data into Weaviate
         client.collections.get("UserMemory").data.insert({
             "user_id": user_id,
             "memory_text": memory_json
@@ -45,13 +44,19 @@ async def save_user_memory(user_id, memory_data, debug_channel=None):
 async def load_user_memory(user_id, debug_channel=None):
     """Retrieves a user's memory from Weaviate using correct API calls."""
     try:
-        # Fetch data from Weaviate
-        result = client.collections.get("UserMemory").query.fetch_objects(
-            filters={"path": ["user_id"], "operator": "Equal", "valueText": user_id}
+        # ✅ Corrected query syntax for Weaviate v4
+        result = client.query.fetch(
+            collection="UserMemory",
+            filters={
+                "operator": "Equal",
+                "path": ["user_id"],
+                "valueText": user_id
+            },
+            limit=1  # ✅ Ensures we get only 1 result
         )
 
         if result.objects:
-            memory_data = json.loads(result.objects[0].properties["memory_text"])
+            memory_data = json.loads(result.objects[0]["properties"]["memory_text"])
             debug_msg = f"✅ **Memory loaded for user `{user_id}`.**"
             print(debug_msg)
             if debug_channel:
