@@ -1,10 +1,12 @@
-# **🚀 Full Guide: Setting Up Weaviate & AshBot on a Free Google Compute Engine (GCE) VM**
+# 🚀 Full Guide: Setting Up Weaviate & AshBot on a Free Google Compute Engine (GCE) VM
 
-## **📌 Overview**
+## 📌 Overview
 This guide will walk you through **setting up a free Google Compute Engine (GCE) VM** to host both **Weaviate (for memory storage)** and **AshBot (your Discord bot)** so they run 24/7, even when your computer is off.
 
 ---
-## **📝 Step 1: Set Up a Google Cloud Account**
+## 📝 Step 1: Set Up a Google Cloud Compute Engine VM
+
+### 1️⃣ Create a Free Google Cloud Account
 1. **Go to Google Cloud Console:**  
    👉 [https://console.cloud.google.com/](https://console.cloud.google.com/)
 2. **Sign in with a Google account** (or create a new one).
@@ -15,10 +17,11 @@ This guide will walk you through **setting up a free Google Compute Engine (GCE)
    - Name it **AshBot VM** (or anything you like).
    - Click **Create**.
 
-🔹 **Checkpoint:** You now have a working Google Cloud account.
+✅ **Checkpoint:** Your Google Cloud account is ready.
 
 ---
-## **🖥️ Step 2: Create a Free Virtual Machine (VM)**
+## 🖥️ Step 2: Create a Free Virtual Machine (VM)
+
 1. **Go to Compute Engine:**  
    👉 [https://console.cloud.google.com/compute](https://console.cloud.google.com/compute)
 2. **Click "Create Instance."**
@@ -32,10 +35,11 @@ This guide will walk you through **setting up a free Google Compute Engine (GCE)
    - **Firewall:** Check both **Allow HTTP** and **Allow HTTPS**.
 4. **Click Create** and wait for the VM to start.
 
-🔹 **Checkpoint:** Your Ubuntu VM is running and ready for setup.
+✅ **Checkpoint:** Your Ubuntu VM is running.
 
 ---
-## **🔒 Step 3: Configure the VM (Setup SSH, Install Dependencies)**
+## 🔒 Step 3: Configure the VM (Setup SSH, Install Dependencies)
+
 1. **Connect to the VM via SSH:**
    - In the Google Cloud Console, go to **Compute Engine**.
    - Click **SSH** next to `ashbot-vm`.
@@ -55,10 +59,10 @@ This guide will walk you through **setting up a free Google Compute Engine (GCE)
    sudo systemctl enable --now docker
    ```
 
-🔹 **Checkpoint:** The VM is fully configured and ready for Weaviate.
+✅ **Checkpoint:** The VM is fully configured.
 
 ---
-## **📦 Step 4: Install & Run Weaviate (Vector Database)**
+## 📦 Step 4: Install & Run Weaviate (Vector Database)
 
 1. **Pull the Weaviate Docker Image:**  
    ```sh
@@ -74,12 +78,11 @@ This guide will walk you through **setting up a free Google Compute Engine (GCE)
    ```sh
    sudo docker ps
    ```
-   You should see a running container named **weaviate**.
 
-🔹 **Checkpoint:** Weaviate is now running and ready for use.
+✅ **Checkpoint:** Weaviate is now running.
 
 ---
-## **🤖 Step 5: Deploy AshBot**
+## 🤖 Step 5: Deploy AshBot
 
 1. **Clone the AshBot Repository (or Upload Your Code):**  
    ```sh
@@ -98,92 +101,115 @@ This guide will walk you through **setting up a free Google Compute Engine (GCE)
    pip install -r requirements.txt
    ```
 
-4. **Modify `chat.py` to Use Weaviate Instead of JSON:**
-   - Update AshBot’s memory system to store & retrieve data from Weaviate instead of `users.json`.
-   - Use Weaviate’s API for semantic memory retrieval.
-
-5. **Run AshBot:**  
-   ```sh
-   python ashBot.py
+4. **Modify AshBot’s Memory System to Use Weaviate**
+   - Create `subprocesses/weaviate_memory.py` and paste:
+   
+   ```python
+   import weaviate
+   import json
+   
+   client = weaviate.Client("http://localhost:8080")
+   
+   def store_user_memory(user_id, name, memory_data):
+       client.data_object.create(
+           data_object={"user_id": user_id, "name": name, "memory": json.dumps(memory_data)},
+           class_name="UserMemory",
+       )
+   
+   def retrieve_user_memory(user_id):
+       result = client.query.get("UserMemory", ["user_id", "name", "memory"]).do()
+       if result and "data" in result and "Get" in result["data"]:
+           for item in result["data"]["Get"]["UserMemory"]:
+               if item["user_id"] == user_id:
+                   return json.loads(item["memory"])
+       return {}
    ```
 
-🔹 **Checkpoint:** AshBot is now running and connected to Weaviate.
+✅ **AshBot now uses Weaviate for memory storage!**
 
 ---
-## **♻️ Step 6: Keep Everything Running (Auto-Restart on Boot)**
-1. **Create a systemd service for Weaviate:**  
-   ```sh
-   sudo nano /etc/systemd/system/weaviate.service
-   ```
+## ♻️ Step 6: Ensure Weaviate & AshBot Auto-Restart
 
-   Paste the following:
-   ```ini
-   [Unit]
-   Description=Weaviate Vector Database
-   After=network.target
+### **1️⃣ Weaviate Auto-Restart**
+```sh
+sudo nano /etc/systemd/system/weaviate.service
+```
+Paste:
+```ini
+[Unit]
+Description=Weaviate Vector Database
+After=network.target
 
-   [Service]
-   ExecStart=/usr/bin/docker start weaviate
-   ExecStop=/usr/bin/docker stop weaviate
-   Restart=always
-   User=root
+[Service]
+ExecStart=/usr/bin/docker start weaviate
+ExecStop=/usr/bin/docker stop weaviate
+Restart=always
+User=root
 
-   [Install]
-   WantedBy=multi-user.target
-   ```
-   **Save and exit** (`CTRL + X`, then `Y`, then `Enter`).
+[Install]
+WantedBy=multi-user.target
+```
+Enable Weaviate:
+```sh
+sudo systemctl enable weaviate
+sudo systemctl start weaviate
+```
 
-2. **Enable the Weaviate Service:**  
-   ```sh
-   sudo systemctl enable weaviate
-   sudo systemctl start weaviate
-   ```
+### **2️⃣ AshBot Auto-Restart**
+```sh
+sudo nano /etc/systemd/system/ashbot.service
+```
+Paste:
+```ini
+[Unit]
+Description=AshBot Discord Bot
+After=network.target
 
-3. **Create a systemd service for AshBot:**  
-   ```sh
-   sudo nano /etc/systemd/system/ashbot.service
-   ```
+[Service]
+WorkingDirectory=/home/YOUR_USER/ashbot
+ExecStart=/home/YOUR_USER/ashbot/.venv/bin/python ashBot.py
+Restart=always
+User=YOUR_USER
 
-   Paste the following:
-   ```ini
-   [Unit]
-   Description=AshBot Discord Bot
-   After=network.target
+[Install]
+WantedBy=multi-user.target
+```
+Enable AshBot:
+```sh
+sudo systemctl enable ashbot
+sudo systemctl start ashbot
+```
 
-   [Service]
-   WorkingDirectory=/home/YOUR_USER/ashbot
-   ExecStart=/home/YOUR_USER/ashbot/.venv/bin/python ashBot.py
-   Restart=always
-   User=YOUR_USER
-
-   [Install]
-   WantedBy=multi-user.target
-   ```
-   **Save and exit** (`CTRL + X`, then `Y`, then `Enter`).
-
-4. **Enable the AshBot Service:**  
-   ```sh
-   sudo systemctl enable ashbot
-   sudo systemctl start ashbot
-   ```
-
-🔹 **Checkpoint:** Both Weaviate & AshBot now **auto-restart if the server reboots!**
+✅ **Now both services restart on boot!**
 
 ---
-## **🛠️ Step 7: Test Everything**
-1. **Check if AshBot is running:**  
-   ```sh
-   sudo systemctl status ashbot
-   ```
-   ✅ You should see **active (running)**.
+## 🛠️ Step 7: Test Everything
+1️⃣ **Check if AshBot is running**  
+```sh
+sudo systemctl status ashbot
+```
+✅ **Should be active (running)**
 
-2. **Check if Weaviate is running:**  
-   ```sh
-   sudo systemctl status weaviate
-   ```
-   ✅ You should see **active (running)**.
+2️⃣ **Check if Weaviate is running**  
+```sh
+sudo systemctl status weaviate
+```
+✅ **Should be active (running)**
 
-3. **Send a test message to AshBot in Discord.**
+3️⃣ **Send a test message to AshBot in Discord.**  
+🎉 **If AshBot remembers past conversations, success!**
 
-🎉 **Congratulations! AshBot & Weaviate are now running 24/7 on Google Cloud!** 🚀
+---
+## 🎯 Next Steps
+- Test **long-term memory retrieval**.
+- Delete **users.json** if Weaviate works well.
+- Debug if issues arise:  
+  ```sh
+  sudo journalctl -u ashbot -f
+  ```
+- Restart services if needed:  
+  ```sh
+  sudo systemctl restart weaviate
+  ```
 
+🎉 **AshBot now runs 24/7 with Weaviate!** 🚀
